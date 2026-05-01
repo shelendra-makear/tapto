@@ -15,6 +15,8 @@
             init() {
                 const ground = document.getElementById('ground')
 
+                this.placed = false // ✅ flag to lock placement
+
                 // Create model
                 this.model = document.createElement('a-entity')
 
@@ -22,33 +24,33 @@
                 this.model.setAttribute('scale', '0.1 0.1 0.1')
                 this.model.setAttribute('visible', 'false')
 
-                // ❗ DON'T add animation-mixer yet
-
                 this.el.sceneEl.appendChild(this.model)
-
-                // ✅ Wait for model to load
-                this.model.addEventListener('model-loaded', () => {
-                    console.log('Model loaded ✅')
-
-                    // 👉 Now add animation
-
-                })
 
                 // Tap event
                 ground.addEventListener('click', (event) => {
+
+                    // ❌ Stop if already placed
+                    if (this.placed) return
+
+                    this.placed = true // ✅ lock
+
                     const touchPoint = event.detail.intersection.point
-                    ground.removeEventListener('click', placeObject);
+
                     this.model.setAttribute('position', touchPoint)
 
                     const randomY = Math.random() * 360
                     this.model.setAttribute('rotation', `0 ${randomY} 0`)
 
                     this.model.setAttribute('visible', 'true')
+
+                    // ✅ Start animation ONLY once
                     this.model.setAttribute('animation-mixer', {
                         clip: '*',
                         loop: 'once',
                         clampWhenFinished: true,
                     })
+
+                    console.log('Model placed ✅ (locked)')
                 })
             },
         })
