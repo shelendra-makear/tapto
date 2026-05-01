@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script crossorigin="anonymous" src="/external/scripts/8frame-1.5.0.min.js"></script>
+    <script crossorigin="anonymous" src="/external/xrextras/xrextras.js"></script>
+    <script crossorigin="anonymous" src="/external/landing-page/landing-page.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script> -->
+    <script crossorigin="anonymous" src="/external/xr/xr.js" async="true" data-preload-chunks="face, slam"></script>
+
+    <script>
+        AFRAME.registerComponent('tap-place', {
+            init() {
+                const ground = document.getElementById('ground')
+
+                // ✅ Create single model
+                this.model = document.createElement('a-entity')
+
+                this.model.setAttribute('gltf-model', '#treeModel')
+
+                this.model.setAttribute('scale', '0.1 0.1 0.1')
+                this.model.setAttribute('visible', 'false')
+                this.model.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 1')
+                this.el.sceneEl.appendChild(this.model)
+
+                // ✅ Tap event
+                ground.addEventListener('click', (event) => {
+                    const touchPoint = event.detail.intersection.point
+
+                    // Set position
+                    this.model.setAttribute('position', touchPoint)
+
+                    // Optional rotation
+                    const randomY = Math.random() * 360
+                    this.model.setAttribute('rotation', `0 ${randomY} 0`)
+
+                    // ✅ Show model
+                    this.model.setAttribute('visible', 'true')
+                })
+            },
+        })
+    </script>
+</head>
+
+<body>
+    <a-scene xrweb xrextras-loading xrextras-runtime-error renderer="colorManagement: true">
+
+        <!-- Camera -->
+        <a-camera position="0 1.6 0" raycaster="objects: .cantap" cursor="fuse: false; rayOrigin: mouse;"></a-camera>
+
+        <!-- Assets -->
+        <a-assets>
+            <!-- 👉 Replace with your model -->
+            <a-asset-item id="treeModel" src="exotic_darkv13.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Ground (tap surface) -->
+        <a-plane id="ground" class="cantap" rotation="-90 0 0" width="100" height="100" color="#7BC8A4"
+            visible="false"></a-plane>
+
+        <!-- Component attached here -->
+        <a-entity tap-place></a-entity>
+
+    </a-scene>
+</body>
+
+</html>

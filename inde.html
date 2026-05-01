@@ -1,0 +1,143 @@
+inde.html
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+
+  <!-- Animation -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a-scene>
+
+    <!-- ASSETS -->
+    <a-assets>
+      <a-asset-item id="model" src="/model.glb"></a-asset-item>
+      <img id="img" src="/dad.jpg">
+    </a-assets>
+
+    <!-- MODEL -->
+    <a-entity id="modelEl" gltf-model="#model" position="0 0 -3" scale="15 15 15" animation-mixer
+      apply-textures></a-entity>
+
+    <!-- LIGHT -->
+    <a-light type="ambient" intensity="1"></a-light>
+    <a-light type="directional" position="5 10 5"></a-light>
+
+    <!-- CAMERA -->
+    <a-camera position="0 2 6"></a-camera>
+
+  </a-scene>
+
+  <script>
+    AFRAME.registerComponent("apply-textures", {
+      init() {
+        this.el.addEventListener("model-loaded", () => {
+          const mesh = this.el.getObject3D("mesh");
+
+          console.log("✅ MODEL LOADED");
+
+          // =========================
+          // 📝 TEXT TEXTURE (FIXED)
+          // =========================
+          function createTextTexture() {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = 512;
+            canvas.height = 512;
+
+            // background
+            ctx.fillStyle = "red";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 42px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // 🔥 PERFECT CENTER TEXT
+            ctx.fillText("I love you ❤️", centerX, centerY - 30);
+            ctx.fillText("Dad", centerX, centerY + 30);
+
+            const tex = new THREE.CanvasTexture(canvas);
+
+            // 🔥 IMPORTANT FIXES
+            tex.flipY = false;
+            tex.center.set(0.5, 0.5);
+            tex.rotation = Math.PI; // 🔥 fixes tilted plane issue
+
+            return tex;
+          }
+
+          const textTexture = createTextTexture();
+
+          // =========================
+          // 🖼 IMAGE TEXTURE (FIXED)
+          // =========================
+          const loader = new THREE.TextureLoader();
+
+          loader.load(
+            "/dad.jpg",
+            (imgTexture) => {
+
+              imgTexture.flipY = false;
+              imgTexture.colorSpace = THREE.SRGBColorSpace;
+
+              // =========================
+              // 🔥 APPLY TEXTURES
+              // =========================
+              mesh.traverse((child) => {
+                if (!child.isMesh) return;
+
+                console.log("Mesh:", child.name);
+
+                // ✅ IMAGE → Plane002
+                if (child.name === "Plane002") {
+                  child.material = new THREE.MeshStandardMaterial({
+                    map: imgTexture,
+                    side: THREE.DoubleSide
+                  });
+
+                  console.log("✅ IMAGE SET");
+                }
+
+                // ✅ TEXT → Plane003
+                if (child.name === "Plane003") {
+                  child.material = new THREE.MeshStandardMaterial({
+                    map: textTexture,
+                    side: THREE.DoubleSide
+                  });
+
+                  console.log("✅ TEXT SET");
+                }
+              });
+
+            },
+            undefined,
+            (err) => console.log("❌ IMAGE ERROR", err)
+          );
+
+        });
+      }
+    });
+  </script>
+
+</body>
+
+</html>

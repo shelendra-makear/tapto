@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+  <!-- animation-mixer component -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+</head>
+
+<body>
+
+  <a-scene>
+    <!-- Camera -->
+    <a-entity camera position="0 1.6 3"></a-entity>
+
+    <!-- Light -->
+    <a-light type="ambient" color="#fff"></a-light>
+    <a-light type="directional" position="1 1 1"></a-light>
+
+    <!-- 3D Model -->
+
+    <a-entity gltf-model="./exotic_darkv13.glb" position="0 0 -15" scale="0.5 0.5 0.5" rotation="0 0 0"
+      animation-mixer="" id="modelname" change-exotic-texture></a-entity>
+
+    <!-- Background -->
+    <a-sky color="#ECECEC"></a-sky>
+  </a-scene>
+  <script>
+    AFRAME.registerComponent("change-exotic-texture", {
+      init() {
+        const modelEl = document.getElementById("modelname");
+
+        modelEl.addEventListener("model-loaded", () => {
+          console.log("✅ Model Loaded");
+
+          const root = modelEl.getObject3D("mesh");
+
+          if (!root) {
+            console.log("❌ Mesh not found");
+            return;
+          }
+
+          console.log("FULL MODEL:", root);
+
+          // ✅ YOUR CURRENT PATH
+          const modelmesh = root.children[1].children[4];
+
+          console.log("🎯 TARGET MESH:", modelmesh);
+          console.log("🎯 MESH NAME:", modelmesh.name);
+
+          // ✅ LOAD TEXTURE
+          const texture = new THREE.TextureLoader().load(
+            "https://images.pexels.com/photos/34043108/pexels-photo-34043108.jpeg",
+            () => {
+              console.log("✅ Texture Loaded");
+
+              texture.flipY = false;
+              texture.encoding = THREE.sRGBEncoding;
+
+              // ✅ APPLY ONLY TO THIS MESH
+              modelmesh.material.map = texture;
+              modelmesh.material.needsUpdate = true;
+
+              console.log("🚀 Texture Applied");
+            }
+          );
+        });
+      },
+    });
+  </script>
+</body>
+
+</html>
