@@ -14,28 +14,38 @@
             init() {
                 const ground = document.getElementById('ground')
 
-                // ✅ Create single model
+                // Create model
                 this.model = document.createElement('a-entity')
 
                 this.model.setAttribute('gltf-model', '#treeModel')
-
                 this.model.setAttribute('scale', '0.1 0.1 0.1')
                 this.model.setAttribute('visible', 'false')
-                this.model.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 1')
+
+                // ❗ DON'T add animation-mixer yet
+
                 this.el.sceneEl.appendChild(this.model)
 
-                // ✅ Tap event
+                // ✅ Wait for model to load
+                this.model.addEventListener('model-loaded', () => {
+                    console.log('Model loaded ✅')
+
+                    // 👉 Now add animation
+                    this.model.setAttribute('animation-mixer', {
+                        clip: '*',
+                        loop: 'repeat',
+                        timeScale: 1
+                    })
+                })
+
+                // Tap event
                 ground.addEventListener('click', (event) => {
                     const touchPoint = event.detail.intersection.point
 
-                    // Set position
                     this.model.setAttribute('position', touchPoint)
 
-                    // Optional rotation
                     const randomY = Math.random() * 360
                     this.model.setAttribute('rotation', `0 ${randomY} 0`)
 
-                    // ✅ Show model
                     this.model.setAttribute('visible', 'true')
                 })
             },
