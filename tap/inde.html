@@ -1,4 +1,3 @@
-inde.html
 <!DOCTYPE html>
 <html>
 
@@ -7,135 +6,175 @@ inde.html
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
-
-  <!-- Animation -->
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
   <style>
     body {
       margin: 0;
+      overflow: hidden;
+    }
+
+    #ui {
+      position: absolute;
+      z-index: 10;
+      background: white;
+      padding: 10px;
+      top: 10px;
+      left: 10px;
+      width: 220px;
+      border-radius: 10px;
+    }
+
+    #ui input,
+    #ui button {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 6px;
     }
   </style>
 </head>
 
 <body>
 
+  <!-- UI -->
+  <div id="ui">
+    <input id="nameInput" placeholder="Enter Name">
+    <input id="msgInput" placeholder="Enter Message">
+    <input type="file" id="imgInput">
+    <button onclick="applyUserData()">Apply</button>
+  </div>
+
   <a-scene>
 
-    <!-- ASSETS -->
     <a-assets>
-      <a-asset-item id="model" src="/model.glb"></a-asset-item>
-      <img id="img" src="/dad.jpg">
+      <a-asset-item id="model" src="./7.glb"></a-asset-item>
     </a-assets>
 
-    <!-- MODEL -->
-    <a-entity id="modelEl" gltf-model="#model" position="0 0 -3" scale="15 15 15" animation-mixer
-      apply-textures></a-entity>
+    <a-entity id="modelEl" gltf-model="#model" position="0 0 -3" scale="1 1 1" animation-mixer apply-textures>
+    </a-entity>
 
-    <!-- LIGHT -->
     <a-light type="ambient" intensity="1"></a-light>
     <a-light type="directional" position="5 10 5"></a-light>
 
-    <!-- CAMERA -->
     <a-camera position="0 2 6"></a-camera>
 
   </a-scene>
 
   <script>
+
+    let modelMesh = null;
+
+    // ================= MODEL LOAD =================
     AFRAME.registerComponent("apply-textures", {
       init() {
         this.el.addEventListener("model-loaded", () => {
-          const mesh = this.el.getObject3D("mesh");
-
+          modelMesh = this.el.getObject3D("mesh");
           console.log("✅ MODEL LOADED");
 
-          // =========================
-          // 📝 TEXT TEXTURE (FIXED)
-          // =========================
-          function createTextTexture() {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-
-            canvas.width = 512;
-            canvas.height = 512;
-
-            // background
-            ctx.fillStyle = "red";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = "white";
-            ctx.font = "bold 42px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            // 🔥 PERFECT CENTER TEXT
-            ctx.fillText("I love you ❤️", centerX, centerY - 30);
-            ctx.fillText("Dad", centerX, centerY + 30);
-
-            const tex = new THREE.CanvasTexture(canvas);
-
-            // 🔥 IMPORTANT FIXES
-            tex.flipY = false;
-            tex.center.set(0.5, 0.5);
-            tex.rotation = Math.PI; // 🔥 fixes tilted plane issue
-
-            return tex;
-          }
-
-          const textTexture = createTextTexture();
-
-          // =========================
-          // 🖼 IMAGE TEXTURE (FIXED)
-          // =========================
-          const loader = new THREE.TextureLoader();
-
-          loader.load(
-            "/dad.jpg",
-            (imgTexture) => {
-
-              imgTexture.flipY = false;
-              imgTexture.colorSpace = THREE.SRGBColorSpace;
-
-              // =========================
-              // 🔥 APPLY TEXTURES
-              // =========================
-              mesh.traverse((child) => {
-                if (!child.isMesh) return;
-
-                console.log("Mesh:", child.name);
-
-                // ✅ IMAGE → Plane002
-                if (child.name === "Plane002") {
-                  child.material = new THREE.MeshStandardMaterial({
-                    map: imgTexture,
-                    side: THREE.DoubleSide
-                  });
-
-                  console.log("✅ IMAGE SET");
-                }
-
-                // ✅ TEXT → Plane003
-                if (child.name === "Plane003") {
-                  child.material = new THREE.MeshStandardMaterial({
-                    map: textTexture,
-                    side: THREE.DoubleSide
-                  });
-
-                  console.log("✅ TEXT SET");
-                }
-              });
-
-            },
-            undefined,
-            (err) => console.log("❌ IMAGE ERROR", err)
-          );
-
+          modelMesh.traverse((c) => {
+            if (c.isMesh) console.log("👉 Mesh:", c.name);
+          });
         });
       }
     });
+
+    // ================= TEXT =================
+    function createTextTexture(name, message) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = 512;
+      canvas.height = 512;
+
+      ctx.fillStyle = "red";
+      ctx.fillRect(0, 0, 512, 512);
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.font = "bold 40px Arial";
+      ctx.fillText(message || "I love you ❤️", 256, 200);
+
+      ctx.font = "bold 50px Arial";
+      ctx.fillText(name || "Dad", 256, 300);
+
+      const tex = new THREE.CanvasTexture(canvas);
+
+      // ✅ FINAL MIRROR FIX (X-axis only)
+      tex.flipY = false;
+      tex.repeat.set(-1, 1);
+      tex.offset.set(1, 0);
+
+      return tex;
+    }
+
+    // ================= IMAGE =================
+    function createImageTexture(file) {
+      return new Promise((resolve) => {
+        if (!file) return resolve(null);
+
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+
+          img.onload = () => {
+            const tex = new THREE.Texture(img);
+            tex.needsUpdate = true;
+
+            // ✅ SAME MIRROR FIX
+            tex.flipY = false;
+            tex.repeat.set(-1, 1);
+            tex.offset.set(1, 0);
+
+            resolve(tex);
+          };
+        };
+
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ================= APPLY =================
+    async function applyUserData() {
+
+      if (!modelMesh) {
+        alert("Model not loaded yet!");
+        return;
+      }
+
+      const name = document.getElementById("nameInput").value;
+      const message = document.getElementById("msgInput").value;
+      const file = document.getElementById("imgInput").files[0];
+
+      const textTexture = createTextTexture(name, message);
+      const imageTexture = await createImageTexture(file);
+
+      modelMesh.traverse((child) => {
+        if (!child.isMesh) return;
+
+        console.log("Applying:", child.name);
+
+        // 🖼 IMAGE PANEL
+        if (child.name === "Plane" || child.name === "Panel") {
+          if (imageTexture) {
+            child.material.map = imageTexture;
+            child.material.needsUpdate = true;
+          }
+        }
+
+        // 📝 TEXT PANEL
+        if (child.name === "Plane001" || child.name === "Panel") {
+          child.material.map = textTexture;
+          child.material.needsUpdate = true;
+        }
+      });
+
+      console.log("🎉 FIXED: TEXT + IMAGE CORRECT");
+    }
+
   </script>
 
 </body>
